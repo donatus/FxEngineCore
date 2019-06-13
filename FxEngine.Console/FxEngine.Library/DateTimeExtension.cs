@@ -1,6 +1,7 @@
 ﻿using FxEngine.Library;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace System
@@ -57,6 +58,57 @@ namespace System
             }
 
             return result;
+        }
+
+        internal static DateTimeOffset Max(DateTimeOffset dateA, DateTimeOffset dateB)
+        {
+            return dateA > dateB ? dateA : dateB;
+        }
+
+        internal static DateTime Max(DateTime dateA, DateTime dateB)
+        {
+            return dateA > dateB ? dateA : dateB;
+        }
+
+        public static DateTime AddPeriod(this DateTime from,Period period, int periodCount, int count = 1)
+        {
+            DateTime result = new DateTime(from.Year, from.Month, from.Day, from.Hour, from.Minute, from.Second);
+
+            switch (period)
+            {
+                case Period.Hour:
+                    result = result.AddHours(periodCount * count);
+                    break;
+                case Period.Minute:
+                    result = result.AddMinutes(periodCount * count);
+                    break;
+                case Period.Second:
+                    result = result.AddSeconds(periodCount * count);
+                    break;
+            }
+
+            return result;
+        }
+        public static string ToRfc3339(this DateTime dateTime)
+        {
+            return dateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fffzzz", DateTimeFormatInfo.InvariantInfo);
+        }
+
+        public static string ToRfc3339(this DateTimeOffset dateTime)
+        {
+            return dateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fffzzz");
+        }
+
+
+        public static IEnumerable<DateTime> GetPeriods(this DateTime from, DateTime to, Period period, int periodCount)
+        {
+            DateTime iterator = new DateTime(from.Year, from.Month, from.Day, from.Hour, from.Minute, from.Second);
+
+            while(iterator <= to)
+            {
+                yield return iterator;
+                iterator = iterator.AddPeriod(period, periodCount);
+            }
         }
     }
 }

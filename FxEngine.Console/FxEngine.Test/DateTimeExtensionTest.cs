@@ -26,5 +26,16 @@ namespace FxEngine.Test
             Assert.Equal(new DateTime(2019, 01, 01, 12, 30, 29), dateTime.GetBeginPeriod(Period.Second, 1));
 
         }
+
+        [Fact]
+        public void BrowseDateTimePeriods()
+        {
+            DateTime from = new DateTime(2019, 01, 01, 12, 30, 30);
+
+            foreach(DateTime date in from.GetPeriods(new DateTime(2019, 01, 01, 12, 45, 30), Period.Minute, 1))
+            {
+
+            }
+        }
     }
 }

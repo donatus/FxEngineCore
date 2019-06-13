@@ -12,7 +12,7 @@ namespace FxEngine.Library
 
         public int PeriodCount { get; private set; }
 
-        private readonly Dictionary<DateTime, Candle> _list;
+        public readonly Dictionary<DateTime, Candle> _list;
 
         public delegate void CandleAddedHandler(object sender, Candle addedCandle);
 
@@ -26,6 +26,19 @@ namespace FxEngine.Library
             _list = new Dictionary<DateTime, Candle>();
         }
 
+        protected void AddCandle(Candle consolidated)
+        {
+            _list[consolidated.DateTime] = consolidated;
+
+            //verify if previous candles are setted
+            if (_list.Count > 1)
+            {
+                FeedPrevious(consolidated.DateTime);
+            }
+
+            CandleAddedEvent?.Invoke(this, consolidated);
+        }
+
         public void AddCandle(DateTime dateTime,
                                     decimal open,
                                     decimal close,
@@ -33,6 +46,8 @@ namespace FxEngine.Library
                                     decimal low,
                                     int volume)
         {
+            
+
             Candle candle = new Candle()
             {
                 DateTime = dateTime,
@@ -46,11 +61,57 @@ namespace FxEngine.Library
                 Volume = volume
             };
 
-            _list[dateTime] = candle;
-
-            CandleAddedEvent?.Invoke(this, candle);
+            AddCandle(candle);
+            
         }
 
+        public Candle GetCandle(DateTime date)
+        {
+            if (_list.ContainsKey(date))
+            {
+                return _list[date];
+            }
 
+            return null;
+        }
+
+        private void FeedPrevious(DateTime dateTime)
+        {
+            DateTime previous = dateTime.AddPeriod(Period, PeriodCount, -1);
+
+            if (_list.ContainsKey(previous))
+            {
+                return;
+            }
+
+            while (!_list.ContainsKey(previous))
+            {
+                previous = previous.AddPeriod(Period, PeriodCount, -1);
+            }
+
+            Candle lastCandle = _list[previous];
+
+            foreach (DateTime date in previous.GetPeriods(dateTime, Period, PeriodCount))
+            {
+                if (!_list.ContainsKey(date))
+                {
+                    _list[date] = Candle.CreateZeroCandle(lastCandle, date);
+                }
+            }
+        }
+
+        internal IEnumerable<Candle> GetCandles(DateTime from, DateTime to)
+        {
+            List<Candle> result = new List<Candle>();
+            foreach(DateTime date in from.GetPeriods(to, Period, PeriodCount))
+            {
+                if (_list.ContainsKey(date))
+                {
+                    result.Add(_list[date]);
+                }
+            }
+
+            return result;
+        }
     }
 }
