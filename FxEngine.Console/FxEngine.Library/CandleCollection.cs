@@ -114,7 +114,7 @@ namespace FxEngine.Library
             return result;
         }
 
-        public IEnumerable<string> GetHeaders()
+        public virtual IEnumerable<string> GetHeaders()
         {
             return new string[] { $"{Period.ToString()}{PeriodCount}V",
                                    $"{Period.ToString()}{PeriodCount}C",
@@ -124,7 +124,7 @@ namespace FxEngine.Library
             };
         }
 
-        public IEnumerable<float> GetFeatures(DateTime dateTime)
+        public virtual IEnumerable<float> GetFeatures(DateTime dateTime)
         {
             Candle candle = _list[dateTime];
 
@@ -139,7 +139,7 @@ namespace FxEngine.Library
             return result;
         }
 
-        public bool HasFeatures(DateTime dateTime)
+        public virtual bool HasFeatures(DateTime dateTime)
         {
             return _list.ContainsKey(dateTime);
         }

@@ -1,4 +1,5 @@
 ﻿using FxEngine.Library;
+using Microsoft.ML;
 using System;
 using System.Collections.Generic;
 
@@ -7,6 +8,10 @@ namespace FxEngine.ML
     public class FeaturesFactory
     {
         private readonly List<IFeaturable> _featurables;
+
+        private PipExpectation _pipExpectation;
+
+
 
         public FeaturesFactory()
         {
@@ -45,5 +50,17 @@ namespace FxEngine.ML
 
             return result.ToArray();
         }
+
+        public void AddPredition(PipExpectation pipExpectation)
+        {
+            _pipExpectation = pipExpectation;
+        }
+
+        public ITransformer Fit(MLContext mlContext)
+        {
+            mlContext.Transforms.CopyColumns
+            throw new NotImplementedException();
+        }
+
     }
 }

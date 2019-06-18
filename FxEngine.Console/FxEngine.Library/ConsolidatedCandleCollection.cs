@@ -77,6 +77,5 @@ namespace FxEngine.Library
             return result;
         }
 
-        
     }
 }

@@ -17,15 +17,28 @@ namespace FxEngine.Console
 
         static void Main(string[] args)
         {
-            var candles = Oanda.LoadCandles("EUR_USD", "S5", DateTime.Now.AddDays(-10));
+            var candles = Oanda.LoadCandles("EUR_USD", "S5", DateTime.Now.AddDays(-45));
 
             var collection = new CandleCollection("EUR_USD", Period.S, 5);
+            var M1Consolditation = new ConsolidatedCandleCollection(collection, Period.M, 1);
             var winpip = new PipExpectation(collection, 60);
-            foreach (OandaCandle candle in candles)
+
+            foreach (OandaCandle candle in candles.Where(c => c.Time < DateTime.Now.AddDays(-10)))
             {
                 DateTime datetime = new DateTime(candle.Time.Year, candle.Time.Month, candle.Time.Day, candle.Time.Hour, candle.Time.Minute, candle.Time.Second);
                 collection.AddCandle(datetime, candle.Mid.O, candle.Mid.C, candle.Mid.H, candle.Mid.L, candle.Volume);
             }
+
+            FeaturesFactory features = new FeaturesFactory();
+            features.AddFeaturable(collection);
+            features.AddFeaturable(M1Consolditation);
+            features.AddPredition(winpip);
+
+            
+
+            MLContext mlContext = new MLContext(seed: 0);
+            var pipeline = features.Transform(mlContext);
+            var trainedmodel = pipeline.
 
             PrevisionTradeStrategy strategy = new PrevisionTradeStrategy(collection,winpip);
 
