@@ -36,6 +36,25 @@ namespace FxEngine.Library
             return result;
         }
 
+
+        public static OandaCandle[] LoadLiveCandles(string instrument, string granularity, int count = 5000)
+        {
+            string url = $"{practice}/v3/instruments/{instrument}/candles?price=M&granularity={granularity}&count={count}";
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            request.Headers["Authorization"] = $"Bearer {_token}";
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            string json;
+
+            using (var sr = new StreamReader(response.GetResponseStream()))
+            {
+                json = sr.ReadToEnd();
+            }
+
+            var result = OandaCandles.FromJson(json);
+            return result.Candles;
+        }
+
         public static OandaCandle[] LoadCandles(string instrument, string granularity, DateTime from)
         {
             List<OandaCandle> result = new List<OandaCandle>();
@@ -43,7 +62,7 @@ namespace FxEngine.Library
 
             DateTimeOffset date = from.ToUniversalTime().Date;
 
-            while (date.Date < DateTimeOffset.Now.Date)
+            while (date.Date < DateTimeOffset.Now.AddDays(-1).Date )
             {
 
                 string filename = $"{instrument}{granularity}{date.Year}{date.Month.ToString("D2")}{date.Day.ToString("D2")}.csv";

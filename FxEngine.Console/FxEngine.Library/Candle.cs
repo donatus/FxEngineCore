@@ -30,9 +30,9 @@ namespace FxEngine.Library
 
         public bool IsConsolidated { get; set; }
 
-        public dynamic CloseRelativ => Close - Open;
-        public dynamic HighRaltiv => High - Open;
-        public dynamic LowRelativ => Low - Open;
+        public decimal CloseRelativ => Close - Open;
+        public decimal HighRaltiv => High - Open;
+        public decimal LowRelativ => Low - Open;
 
         public override string ToString()
         {
@@ -59,8 +59,8 @@ namespace FxEngine.Library
 
     public enum Period
     {
-        Hour = 3600,
-        Minute = 60,
-        Second = 1
+        H = 3600,
+        M = 60,
+        S = 1
     }
 }

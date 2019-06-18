@@ -15,7 +15,7 @@ namespace System
 
             switch (period)
             {
-                case Period.Hour:
+                case Period.H:
                     result = new DateTime(date.Year, date.Month, date.Day, date.Hour, 0, 0);
                     if (fixedInterval)
                     {
@@ -29,7 +29,7 @@ namespace System
                     }
 
                     break;
-                case Period.Minute:
+                case Period.M:
                     result = new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, 0);
                     if (fixedInterval)
                     {
@@ -42,7 +42,7 @@ namespace System
                         result = result.AddMinutes(-(periodCount));
                     }
                     break;
-                case Period.Second:
+                case Period.S:
                     result = new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second);
                     if (fixedInterval)
                     {
@@ -76,13 +76,13 @@ namespace System
 
             switch (period)
             {
-                case Period.Hour:
+                case Period.H:
                     result = result.AddHours(periodCount * count);
                     break;
-                case Period.Minute:
+                case Period.M:
                     result = result.AddMinutes(periodCount * count);
                     break;
-                case Period.Second:
+                case Period.S:
                     result = result.AddSeconds(periodCount * count);
                     break;
             }

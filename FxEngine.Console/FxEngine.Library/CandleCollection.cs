@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FxEngine.Library
 {
-    public class CandleCollection
+    public class CandleCollection : IFeaturable
     {
         public string Instrument { get; private set; }
 
@@ -112,6 +112,36 @@ namespace FxEngine.Library
             }
 
             return result;
+        }
+
+        public IEnumerable<string> GetHeaders()
+        {
+            return new string[] { $"{Period.ToString()}{PeriodCount}V",
+                                   $"{Period.ToString()}{PeriodCount}C",
+                                   $"{Period.ToString()}{PeriodCount}H",
+                                   $"{Period.ToString()}{PeriodCount}L",
+
+            };
+        }
+
+        public IEnumerable<float> GetFeatures(DateTime dateTime)
+        {
+            Candle candle = _list[dateTime];
+
+            float[] result = new float[]
+            {
+                candle.Volume,
+                decimal.ToSingle(candle.CloseRelativ),
+                decimal.ToSingle(candle.HighRaltiv),
+                decimal.ToSingle(candle.LowRelativ)
+            };
+
+            return result;
+        }
+
+        public bool HasFeatures(DateTime dateTime)
+        {
+            return _list.ContainsKey(dateTime);
         }
     }
 }
