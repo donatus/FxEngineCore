@@ -37,8 +37,8 @@ namespace FxEngine.Console
             
 
             MLContext mlContext = new MLContext(seed: 0);
-            var pipeline = features.Transform(mlContext);
-            var trainedmodel = pipeline.
+            var pipeline = features.Fit(mlContext);
+            
 
             PrevisionTradeStrategy strategy = new PrevisionTradeStrategy(collection,winpip);
 
