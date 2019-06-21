@@ -103,6 +103,7 @@ namespace FxEngine.ML
 
             var pipeline = mlContext.Transforms.Concatenate("Features", featureNames)
                 .Append(mlContext.Transforms.NormalizeMeanVariance("Features"))
+                .Append(mlContext.Transforms.NormalizeMinMax("Features"))
                 .AppendCacheCheckpoint(mlContext);
                 //.Append(mlContext.Regression.Trainers.OnlineGradientDescent(numberOfIterations:10));
 

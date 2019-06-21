@@ -125,6 +125,7 @@ namespace FxEngine.Library
                                    $"{Period.ToString()}{PeriodCount}C",
                                    $"{Period.ToString()}{PeriodCount}H",
                                    $"{Period.ToString()}{PeriodCount}L",
+                                   $"{Period.ToString()}{PeriodCount}T",
 
             };
         }
@@ -138,6 +139,7 @@ namespace FxEngine.Library
             result[$"{Period.ToString()}{PeriodCount}C"] = decimal.ToSingle(candle.CloseRelativ);
             result[$"{Period.ToString()}{PeriodCount}H"] = decimal.ToSingle(candle.HighRaltiv);
             result[$"{Period.ToString()}{PeriodCount}L"] = decimal.ToSingle(candle.LowRelativ);
+            result[$"{Period.ToString()}{PeriodCount}T"] = (float)candle.DateTime.TimeOfDay.TotalSeconds;
 
             return result;
         }
