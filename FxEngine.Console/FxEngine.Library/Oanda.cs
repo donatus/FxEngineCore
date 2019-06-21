@@ -64,18 +64,25 @@ namespace FxEngine.Library
 
             while (date.Date < DateTimeOffset.Now.AddDays(-1).Date )
             {
-
+                Console.Write($"Loading {date.Date}");
                 string filename = $"{instrument}{granularity}{date.Year}{date.Month.ToString("D2")}{date.Day.ToString("D2")}.csv";
 
                 if (!File.Exists(filename))
                 {
                     DateTimeOffset iterator = date;
 
+                    if (date.Date.DayOfWeek == DayOfWeek.Sunday || date.Date.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        Console.WriteLine($"    SKIPED");
+                        date = date.AddDays(1);
+                        continue;
+                    }
+
                     //date = date.AddSeconds(1);
                     List<OandaCandle> daycandles = new List<OandaCandle>();
                     do
                     {
-
+                        
                         var candles = GetCandles(instrument, granularity, iterator.DateTime);
                         daycandles.AddRange(candles.Candles);
                         Console.WriteLine($" receive {candles.Candles.Count()} from {candles.Candles.Min(c => c.Time)} to {candles.Candles.Max(c => c.Time)}");
@@ -99,7 +106,7 @@ namespace FxEngine.Library
                     }
                     
                 }
-                else
+                else 
                 {
                     using (var reader = new StreamReader(filename))
                     using (var csv = new CsvReader(reader))
@@ -109,6 +116,7 @@ namespace FxEngine.Library
                     }
                 }
 
+                Console.WriteLine($"    OK");
                 date = date.AddDays(1);
             }
 

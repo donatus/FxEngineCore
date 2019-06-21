@@ -77,5 +77,18 @@ namespace FxEngine.Library
             return result;
         }
 
+        public override IDictionary<string, float> GetFeatures(DateTime dateTime)
+        {
+            var result = new Dictionary<string, float>();
+            Candle candle = _list[dateTime];
+
+            result[$"{_period.ToString()}{_periodCount}V"] = candle.Volume;
+            result[$"{_period.ToString()}{_periodCount}C"] = decimal.ToSingle(candle.CloseRelativ);
+            result[$"{_period.ToString()}{_periodCount}H"] = decimal.ToSingle(candle.HighRaltiv);
+            result[$"{_period.ToString()}{_periodCount}L"] = decimal.ToSingle(candle.LowRelativ);
+
+            return result;
+        }
+
     }
 }

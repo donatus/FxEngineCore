@@ -6,10 +6,19 @@ using TicTacTec.TA.Library;
 
 namespace FxEngine.Library
 {
-    public class StochasticStats : AbstractCandleStat
+    public class StochasticStats : AbstractCandleStat, IFeaturable
     {
 
         private readonly Dictionary<DateTime, Stochastic> _statistics;
+
+        public DateTime Begin => _statistics.Keys.Min();
+
+        public DateTime End => _statistics.Keys.Max();
+
+
+        Period IFeaturable.Period => Period;
+
+        int IFeaturable.PeriodCount => PeriodCount;
 
         public StochasticStats(CandleCollection collection) : base(collection, 20)
         {
@@ -61,6 +70,30 @@ namespace FxEngine.Library
             }
 
             return null;
+        }
+
+        public virtual IEnumerable<string> GetHeaders()
+        {
+            return new string[] { $"{Period.ToString()}{PeriodCount}STOCHK",
+                                   $"{Period.ToString()}{PeriodCount}STOCHD",
+
+            };
+        }
+
+        public virtual IDictionary<string, float> GetFeatures(DateTime dateTime)
+        {
+            var result = new Dictionary<string, float>();
+            var stat = _statistics[dateTime];
+
+            result[$"{Period.ToString()}{PeriodCount}STOCHK"] = (float)(stat.K);
+            result[$"{Period.ToString()}{PeriodCount}STOCHD"] = (float)(stat.D);
+
+            return result;
+        }
+
+        public virtual bool HasFeatures(DateTime dateTime)
+        {
+            return _statistics.ContainsKey(dateTime);
         }
     }
 

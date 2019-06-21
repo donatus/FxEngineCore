@@ -6,8 +6,17 @@ namespace FxEngine.Library
 {
     public interface IFeaturable
     {
+        DateTime Begin { get; }
+
+        DateTime End { get; }
+
+        Period Period { get; }
+        int PeriodCount { get; }
+
         IEnumerable<string> GetHeaders();
-        IEnumerable<float> GetFeatures(DateTime dateTime);
+
+        IDictionary<string,float> GetFeatures(DateTime dateTime);
+
         bool HasFeatures(DateTime dateTime);
     }
 }

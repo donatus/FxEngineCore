@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace FxEngine.Library
@@ -11,6 +12,10 @@ namespace FxEngine.Library
         public Period Period { get; private set; }
 
         public int PeriodCount { get; private set; }
+
+        public DateTime Begin => _list.Keys.Min();
+
+        public DateTime End => _list.Keys.Max();
 
         public readonly Dictionary<DateTime, Candle> _list;
 
@@ -124,17 +129,15 @@ namespace FxEngine.Library
             };
         }
 
-        public virtual IEnumerable<float> GetFeatures(DateTime dateTime)
+        public virtual IDictionary<string,float> GetFeatures(DateTime dateTime)
         {
+            var result = new Dictionary<string, float>();
             Candle candle = _list[dateTime];
 
-            float[] result = new float[]
-            {
-                candle.Volume,
-                decimal.ToSingle(candle.CloseRelativ),
-                decimal.ToSingle(candle.HighRaltiv),
-                decimal.ToSingle(candle.LowRelativ)
-            };
+            result[$"{Period.ToString()}{PeriodCount}V"] = candle.Volume;
+            result[$"{Period.ToString()}{PeriodCount}C"] = decimal.ToSingle(candle.CloseRelativ);
+            result[$"{Period.ToString()}{PeriodCount}H"] = decimal.ToSingle(candle.HighRaltiv);
+            result[$"{Period.ToString()}{PeriodCount}L"] = decimal.ToSingle(candle.LowRelativ);
 
             return result;
         }

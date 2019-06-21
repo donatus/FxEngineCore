@@ -3,6 +3,8 @@ using FxEngine.ConsoleML.Model.DataModels;
 using FxEngine.Library;
 using FxEngine.ML;
 using Microsoft.ML;
+using Microsoft.ML.Trainers;
+using Microsoft.ML.Trainers.FastTree;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -20,24 +22,54 @@ namespace FxEngine.Console
             var candles = Oanda.LoadCandles("EUR_USD", "S5", DateTime.Now.AddDays(-45));
 
             var collection = new CandleCollection("EUR_USD", Period.S, 5);
+            var stochasticS5 = new StochasticStats(collection);
             var M1Consolditation = new ConsolidatedCandleCollection(collection, Period.M, 1);
+            var stochasticM1 = new StochasticStats(M1Consolditation);
+            var H1Consolditation = new ConsolidatedCandleCollection(collection, Period.H, 1);
             var winpip = new PipExpectation(collection, 60);
 
+
+            float count = candles.Where(c => c.Time < DateTime.Now.AddDays(-10)).Count();
+            float iterator = 0;
+            float percentiterator = 0;
+            System.Console.Write("Loading candles cache [");
             foreach (OandaCandle candle in candles.Where(c => c.Time < DateTime.Now.AddDays(-10)))
             {
                 DateTime datetime = new DateTime(candle.Time.Year, candle.Time.Month, candle.Time.Day, candle.Time.Hour, candle.Time.Minute, candle.Time.Second);
                 collection.AddCandle(datetime, candle.Mid.O, candle.Mid.C, candle.Mid.H, candle.Mid.L, candle.Volume);
+                iterator++;
+
+                if(iterator*10/count > percentiterator)
+                {
+                    percentiterator++;
+                    System.Console.Write(".");
+                } 
             }
+
+            System.Console.WriteLine("] DONE");
 
             FeaturesFactory features = new FeaturesFactory();
             features.AddFeaturable(collection);
             features.AddFeaturable(M1Consolditation);
-            features.AddPredition(winpip);
+            features.AddFeaturable(H1Consolditation);
+            //features.AddFeaturable(stochasticS5);
+            //features.AddFeaturable(stochasticM1);
+            features.SetPredition(winpip);
 
-            
+            MLContext mlContext = new MLContext();
 
-            MLContext mlContext = new MLContext(seed: 0);
-            var pipeline = features.Fit(mlContext);
+            var regressors = new List<IEstimator<ITransformer>>()
+            {
+                mlContext.Regression.Trainers.FastForest(),
+                mlContext.Regression.Trainers.FastTree(),
+                mlContext.Regression.Trainers.FastTreeTweedie(),
+                mlContext.Regression.Trainers.OnlineGradientDescent(numberOfIterations:50)
+            };
+
+            foreach(var regressor in regressors)
+            {
+                var model = features.Fit(regressor);
+            }
             
 
             PrevisionTradeStrategy strategy = new PrevisionTradeStrategy(collection,winpip);
