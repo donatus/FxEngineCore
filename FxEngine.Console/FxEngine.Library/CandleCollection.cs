@@ -13,11 +13,18 @@ namespace FxEngine.Library
 
         public int PeriodCount { get; private set; }
 
+
+        private DateTime _begin = DateTime.MaxValue;
+
+        private DateTime _end = DateTime.MinValue;
+
         public DateTime Begin => _list.Keys.Min();
 
         public DateTime End => _list.Keys.Max();
 
         public readonly Dictionary<DateTime, Candle> _list;
+
+
 
         public delegate void CandleAddedHandler(object sender, Candle addedCandle);
 
@@ -31,9 +38,13 @@ namespace FxEngine.Library
             _list = new Dictionary<DateTime, Candle>();
         }
 
-        protected void AddCandle(Candle consolidated)
+        public void AddCandle(Candle consolidated)
         {
             _list[consolidated.DateTime] = consolidated;
+
+            _begin = consolidated.DateTime > _begin ? _begin : consolidated.DateTime;
+
+            _end = consolidated.DateTime > _end ? consolidated.DateTime : _end;
 
             //verify if previous candles are setted
             if (_list.Count > 1)
@@ -70,6 +81,7 @@ namespace FxEngine.Library
             
         }
 
+
         public Candle GetCandle(DateTime date)
         {
             if (_list.ContainsKey(date))
@@ -83,6 +95,11 @@ namespace FxEngine.Library
         private void FeedPrevious(DateTime dateTime)
         {
             DateTime previous = dateTime.AddPeriod(Period, PeriodCount, -1);
+
+            if(_begin >= dateTime)
+            {
+                return;
+            } 
 
             if (_list.ContainsKey(previous))
             {

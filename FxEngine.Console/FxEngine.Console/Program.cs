@@ -19,21 +19,23 @@ namespace FxEngine.Console
 
         static void Main(string[] args)
         {
-            var candles = Oanda.LoadCandles("EUR_USD", "S5", DateTime.Now.AddDays(-45));
+            var candles = Oanda.LoadCandles("EUR_USD", "S5", DateTime.Now.AddDays(-60));
 
             var collection = new CandleCollection("EUR_USD", Period.S, 5);
             var stochasticS5 = new StochasticStats(collection);
             var M1Consolditation = new ConsolidatedCandleCollection(collection, Period.M, 1);
+            var M15Consolditation = new ConsolidatedCandleCollection(collection, Period.M, 15);
             var stochasticM1 = new StochasticStats(M1Consolditation);
             var H1Consolditation = new ConsolidatedCandleCollection(collection, Period.H, 1);
+            var stochastich1 = new StochasticStats(H1Consolditation);
+            var H2Consolditation = new ConsolidatedCandleCollection(collection, Period.H, 2);
             var winpip = new PipExpectation(collection, 60);
-
 
             float count = candles.Where(c => c.Time < DateTime.Now.AddDays(-10)).Count();
             float iterator = 0;
-            float percentiterator = 0;
+            float percentiterator = 1;
             System.Console.Write("Loading candles cache [");
-            foreach (OandaCandle candle in candles.Where(c => c.Time < DateTime.Now.AddDays(-10)))
+            foreach (OandaCandle candle in candles)
             {
                 DateTime datetime = new DateTime(candle.Time.Year, candle.Time.Month, candle.Time.Day, candle.Time.Hour, candle.Time.Minute, candle.Time.Second);
                 collection.AddCandle(datetime, candle.Mid.O, candle.Mid.C, candle.Mid.H, candle.Mid.L, candle.Volume);
@@ -45,15 +47,17 @@ namespace FxEngine.Console
                     System.Console.Write(".");
                 } 
             }
-
             System.Console.WriteLine("] DONE");
 
             FeaturesFactory features = new FeaturesFactory();
-            features.AddFeaturable(collection);
+            features.SetCollection(collection);
             features.AddFeaturable(M1Consolditation);
+            features.AddFeaturable(M15Consolditation);
             features.AddFeaturable(H1Consolditation);
-            //features.AddFeaturable(stochasticS5);
-            //features.AddFeaturable(stochasticM1);
+            features.AddFeaturable(H2Consolditation);
+            features.AddFeaturable(stochasticM1);
+            features.AddFeaturable(stochastich1);
+            features.AddFeaturable(stochasticS5);
             features.SetPredition(winpip);
 
             MLContext mlContext = new MLContext();
@@ -63,22 +67,34 @@ namespace FxEngine.Console
                 mlContext.Regression.Trainers.FastForest(),
                 mlContext.Regression.Trainers.FastTree(),
                 mlContext.Regression.Trainers.FastTreeTweedie(),
-                mlContext.Regression.Trainers.OnlineGradientDescent(numberOfIterations:50)
+                mlContext.Regression.Trainers.OnlineGradientDescent(),
+                mlContext.Regression.Trainers.LbfgsPoissonRegression(),
+                mlContext.Regression.Trainers.LightGbm(numberOfIterations:300),
+                mlContext.Regression.Trainers.Sdca(),
+                mlContext.Regression.Trainers.Gam(),
             };
 
             foreach(var regressor in regressors)
             {
-                var model = features.Fit(regressor);
-            }
+                var model = features.Fit(regressor, DateTime.Now.AddDays(-10));
+
+                LearnedTradeStrategy strategy = new LearnedTradeStrategy(features, model);
+                strategy.Initialize();
+                TradeSimulation simulation = new TradeSimulation(collection, strategy);
+
+                DateTime from = DateTime.Now.AddDays(-7).Date;
+                DateTime to = DateTime.Now.Date;
+                simulation.Simulate(from, to);
+
+            }           
+
             
 
-            PrevisionTradeStrategy strategy = new PrevisionTradeStrategy(collection,winpip);
+            //TradeSimulation simulation = new TradeSimulation(collection, strategy);
 
-            TradeSimulation simulation = new TradeSimulation(collection, strategy);
-
-            DateTime from = DateTime.Now.AddDays(-7).Date;
-            DateTime to = DateTime.Now.Date;
-            simulation.Simulate(from, to);
+            //DateTime from = DateTime.Now.AddDays(-7).Date;
+            //DateTime to = DateTime.Now.Date;
+            //simulation.Simulate(from, to);
         }
 
         static void Main2(string[] args)
@@ -88,9 +104,6 @@ namespace FxEngine.Console
             ITransformer mlModel = mlContext.Model.Load("MLModel.zip", out var modelInputSchema);
             var predEngine = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(mlModel);
             System.Console.Write("[OK]\n");
-
-
-            
 
             System.Console.Write("Loading candles ");
             var candlesbefore = Oanda.LoadCandles("EUR_USD", "S5", DateTime.Now.AddDays(-2));

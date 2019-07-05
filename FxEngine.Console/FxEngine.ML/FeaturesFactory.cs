@@ -5,6 +5,7 @@ using Microsoft.ML.StaticPipe;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 
 namespace FxEngine.ML
@@ -15,11 +16,72 @@ namespace FxEngine.ML
 
         private PipExpectation _pipExpectation;
 
+        private CandleCollection _collection;
+
 
 
         public FeaturesFactory()
         {
             _featurables = new List<IFeaturable>();
+        }
+
+        public void SetCollection(CandleCollection collection)
+        {
+            _collection = collection;
+            _featurables.Add(collection);
+        }
+
+        private Dictionary<DateTime, float> _evaluation;
+
+        internal void InitializeEvaluation(ITransformer transformer)
+        {
+            _evaluation = new Dictionary<DateTime, float>();
+            DateTime from = _featurables.Min(c => c.Begin);
+            //to = _featurables.Max(c => c.End);
+            Period period = Period.S;
+            int periodCount = 5;
+
+            List<Dictionary<string, float>> features = new List<Dictionary<string, float>>();
+
+            for (DateTime date = from; date < DateTime.Now; date = date.AddPeriod(period, periodCount))
+            {
+                if (_featurables.All(c => c.HasFeatures(date)))
+                {
+                    Dictionary<string, float> feature = new Dictionary<string, float>();
+                    var featuresDictionnary = GetFeatures(date);
+
+                    if (featuresDictionnary == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var item in featuresDictionnary)
+                    {
+                        feature.Add(item.Key, item.Value);
+                    }
+                    feature["Label"] = 0;
+                    features.Add(feature);
+                    _evaluation[date] = 0;
+                }
+            }
+
+            IDataView data = new FloatsDataView(features);
+            IDataView result = transformer.Transform(data);
+            float[] scoreColumn = result.GetColumn<float>("Score").ToArray();
+
+            int iterator = 0;
+            for (DateTime date = from; date < DateTime.Now; date = date.AddPeriod(period, periodCount))
+            {
+                if (_evaluation.ContainsKey(date))
+                {
+                    _evaluation[date] = scoreColumn[iterator++];
+                }
+            }
+         }
+
+        internal void AddData(Candle candle)
+        {
+            _collection.AddCandle(candle);
         }
 
         public void AddFeaturable(IFeaturable featurable)
@@ -64,13 +126,48 @@ namespace FxEngine.ML
             _pipExpectation = pipExpectation;
         }
 
-        public ITransformer Fit(IEstimator<ITransformer> estimator)
+        public float[] Evaluate(ITransformer transformer, DateTime dateTime)
+        {
+
+            if (_evaluation.ContainsKey(dateTime))
+            {
+                float[] score = new[] { _evaluation[dateTime] };
+                return score;
+            }
+
+            Dictionary<string, float> feature = new Dictionary<string, float>();
+            List<Dictionary<string, float>> features = new List<Dictionary<string, float>>();
+
+            var featuresDictionnary = GetFeatures(dateTime);
+
+            if (featuresDictionnary == null)
+            {
+                return null;
+            }
+
+            foreach (var item in featuresDictionnary)
+            {
+                feature.Add(item.Key, item.Value);
+            }
+            features.Add(feature);
+            IDataView data = new FloatsDataView(features);
+
+            MLContext mlContext = new MLContext();
+            IDataView result = transformer.Transform(data);
+
+            float[] scoreColumn = result.GetColumn<float>("Score").ToArray();
+
+            
+            return scoreColumn;
+        }
+
+        public ITransformer Fit(IEstimator<ITransformer> estimator, DateTime to)
         {
             Console.WriteLine($"Running {estimator.GetType().Name}");
             MLContext mlContext = new MLContext();
 
             DateTime from = _featurables.Min(c => c.Begin);
-            DateTime to = _featurables.Max(c => c.End);
+            //to = _featurables.Max(c => c.End);
             Period period = Period.S;
             int periodCount = 5;
 
@@ -98,6 +195,8 @@ namespace FxEngine.ML
             }
 
             IDataView data = new FloatsDataView(features);
+            using (FileStream stream = new FileStream("data.tsv", FileMode.Create))
+                mlContext.Data.SaveAsText(data, stream);
 
             string[] featureNames = features.First().Keys.Where(c => c != "Label").ToArray();
 
@@ -129,7 +228,7 @@ namespace FxEngine.ML
             //RegressionMetrics trainedModelMetrics = mlContext.Regression.Evaluate(testDataPredictions);
             //double rSquared = trainedModelMetrics.RSquared;
 
-            return topModel.Model;
+            return transformData.Append(topModel.Model);
         }
 
 

@@ -56,9 +56,25 @@ namespace FxEngine.ML
                 }
 
                 dateTime = dateTime.AddSeconds(5);
+
+                var currentWin = _activity.Sum(c => c.Win);
+                var currentLoss = _activity.Sum(c => c.Loss);
+
+                var currentProfit = currentWin + currentLoss;
+                var currentwincount = _activity.Count(c => c.Win > 0);
+                var currentlossCount = _activity.Count(c => c.Loss < 0);
             }
 
-            Console.WriteLine($"Win {_activity.Sum(c => c.Win)} Loss {_activity.Sum(c => c.Loss)}");
+            var Win = _activity.Sum(c => c.Win);
+            var wincount = _activity.Count(c => c.Win > 0);
+
+            var Loss = _activity.Sum(c => c.Loss);
+            var lossCount = _activity.Count(c => c.Loss < 0);
+
+            var profit = Win + Loss;
+
+            double profitPercent = (double)wincount / (double)_activity.Count;
+            Console.WriteLine($"\tProfit {profit}({profitPercent:#.##}) Win {Win}({wincount}) Loss {Loss}({lossCount}) trades {_activity.Count}");
         }
     }
 
